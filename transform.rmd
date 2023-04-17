@@ -1,0 +1,69 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+The [R plugin](https://www.jetbrains.com/help/pycharm/r-plugin-support.html) for IntelliJ-based IDEs provides
+handy capabilities to work with the [R Markdown](https://www.jetbrains.com/help/pycharm/r-markdown.html) files.
+To [add](https://www.jetbrains.com/help/pycharm/r-markdown.html#add-code-chunk) a new R chunk,
+position the caret at any line or the code chunk, then click "+".
+
+The code chunk appears:
+```{r}
+library(dplyr)
+library(readr)
+
+# Setting the dir path
+setwd("/Users/abyvelazquez/Developer/Repos/DS_TennisSet/data")
+data_M <- read.csv("frenchopenFinalM.csv")
+nrow(data_M)
+
+
+```
+```
+Hacer una columna extra con la suma de los sets por jugador
+```
+```{r}
+# Se suma WSets y LSets creando nuevo atributo llamado SetsTotales que representará el número total de Sets Jugados
+data_M$SetsTotales <- rowSums(data_M[ , c(20,21)], na.rm=TRUE)
+# Data Frame nuevo
+data_M
+```
+
+```
+Deberiamos de eliminar los puntos de los sets, quedarnos con sets del ganador y sets del perdedor y hacer un
+average de la diferencia de puntos promedio en los sets.
+Se observo que si habia Nas en las columnas W# y L# la operacion final daba NA por lo que si debemos de rellenar con 0s
+```
+```{r}
+# Se reemplazan los valores faltantes por 0s en las columnas de W# y L#
+data_M <- mutate_at(data_M, c("W1", "L1","W2", "L2","W3", "L3","W4", "L4","W5", "L5"), ~replace(., is.na(.), 0))
+# Se resta la diferencia de puntos y se obtiene el valor absoluto de cada uno
+data_M$difS1 <- abs(data_M$W1 - data_M$L1)
+data_M$difS2 <- abs(data_M$W2 - data_M$L2)
+data_M$difS3 <- abs(data_M$W3 - data_M$L3)
+data_M$difS4 <- abs(data_M$W4 - data_M$L4)
+data_M$difS5 <- abs(data_M$W5 - data_M$L5)
+# Se suman las diferencias de todos los sets
+data_M$difTotal<- data_M$difS1 + data_M$difS2 + data_M$difS3 + data_M$difS4 + data_M$difS5
+# Se divide entre el numero de sets totales jugados
+data_M$PromDif <- (data_M$difTotal/ data_M$SetsTotales)
+# Data Frame nuevo
+data_M
+```
+```
+Por ultimo eliminamos las columnas utilizadas para el calculo PromDif junto con las W# y L#
+```
+```{r}
+data_M_Transformed <- data_M[,!names(data_M) %in% c("W1", "L1", "W2", "L2", "W3", "L3", "W4", "L4", "W5", "L5", "difS1", "difS2", "difS3", "difS4", "difS5", "difTotal")]
+data_M_Transformed
+write.csv(data_M_Transformed, "frenchopenFinalMTransformed.csv", row.names=FALSE)
+names(data_M_Transformed)
+```
+```{r}
+
+data_M_Transformed <- mutate_at(data_M_Transformed, c("B365W", "PSW"), ~replace(., is.na(.), data_M_Transformed$AvgW))
+data_M_Transformed  <- mutate_at(data_M_Transformed, c("B365L", "PSL"), ~replace(., is.na(.), data_M_Transformed$AvgL))
+data_M_Transformed
+write.csv(data_M_Transformed, "frenchopenFinalMTransformed.csv", row.names=FALSE)
+```
