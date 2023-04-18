@@ -1,0 +1,38 @@
+---
+title: "dataLabelWL"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+library(readr)
+library(lubridate)
+
+# Setting the dir path
+setwd("/Users/abyvelazquez/Developer/Repos/DS_TennisSet/data")
+data_M <- read.csv("frenchopenFinalMTransformed.csv")
+```
+Convert the Date attribute into a Date Object and not character, also order data and limit to 2015 to now window.
+```{r}
+data_M$Date <- dmy(data_M$Date)
+# Sort by Date of match then by round
+data_M[
+  with(data_M, order(data_M$Date, data_M$Round)),
+]
+DelimiterDate <- as.Date("2016/01/01")
+data_F <- data_M[data_M$Date >= DelimiterDate ,]
+
+
+```
+Now we want to create a label (1->won, 0-> lost) that indicates whether the winner in fact won based on a rule.
+The rule can begin to be very simple, e.g: if Wrank is smaller than LRank, its better positioned in the begining of
+the tournament, therefore it should win.
+```{r}
+data_F$LabelWinner <- ifelse((data_F$WRank - data_F$LRank < 0), 1, 0)
+data_F
+```
+
+Our goal is to create a more complex rule, taking into account not only the Rankings of each player, but other
+attributes such as the Pts they have and the odds.
+Later we want to take into account former matches of the players and even the number of rounds they played in each
+tournament indicating how far into the finals they get.
