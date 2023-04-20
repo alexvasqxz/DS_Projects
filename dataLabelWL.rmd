@@ -1,0 +1,121 @@
+---
+title: "dataLabelWL"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+library(readr)
+library(lubridate)
+
+# Setting the dir path
+setwd("/Users/abyvelazquez/Developer/Repos/DS_TennisSet/data")
+data_M <- read.csv("frenchopenFinalMTransformed.csv")
+```
+Convert the Date attribute into a Date Object and not character, also order data and limit to 2015 to now window.
+```{r}
+data_M$Date <- dmy(data_M$Date)
+# Sort by Date of match then by round
+data_M[
+  with(data_M, order(data_M$Date, data_M$Round)),
+]
+DelimiterDate <- as.Date("2016/01/01")
+data_F <- data_M[data_M$Date >= DelimiterDate ,]
+
+
+```
+Now we want to create a label (1->won, 0-> lost) that indicates whether the winner in fact won based on a rule.
+The rule can begin to be very simple, e.g: if Wrank is smaller than LRank, its better positioned in the begining of
+the tournament, therefore it should win.
+```{r}
+data_F$LabelWinnerRank <- ifelse((data_F$WRank - data_F$LRank < 0), 1, 0)
+data_F
+```
+
+Our goal is to create a more complex rule, taking into account not only the Rankings of each player, but other
+attributes such as the Pts they have and the odds.
+Later we want to take into account former matches of the players and even the number of rounds they played in each
+tournament indicating how far into the finals they get.
+```{r}
+# To get the frequency of our label, 254 Ceros and 633 Ones:
+table(data_F$LabelWinnerRank)
+```
+```{r}
+data_F$LabelWinnerPoints <- ifelse((data_F$WPts > data_F$LPts), 1, 0)
+data_F
+```
+```{r}
+# To get the frequency of our label, 254 Ceros and 633 Ones:
+table(data_F$LabelWinnerPoints)
+```
+Interesting... we found both rules have the same frequency, is it equal for every row?
+```{r}
+data_F$SameLabelWPWR <- ifelse((data_F$LabelWinnerPoints == data_F$LabelWinnerRank), 1, 0)
+table(data_F$SameLabelWPWR)
+```
+We can see that if a player has a better Rank, it also means that he always has a higher number of points than
+his opponent.
+Therefore, I dont see the case of combining a rule that takes into account Rank and Points into one Label of W/L.
+
+
+
+
+Lets now see if we create a simple rule taking into account the odds.
+First we want to eliminate NA rows where the odds attributes are na, so it does not interfere with our logic of the rule
+```{r}
+data_F[!is.na(data_F$B365W),]
+data_F[!is.na(data_F$B365L),]
+data_F[!is.na(data_F$PSW),]
+data_F[!is.na(data_F$PSL),]
+```
+For the B365 odds label, because we know it is using the Decimal European odds system, we know that the favorite player
+will always have a minor value, and the underdog player(the one where fans and experts say is the less likely to win,
+will have a mayor turnover of investment in the likelihood he wins)
+```{r}
+data_F$LabelWinnerOddsB65 <- ifelse((data_F$B365W < data_F$B365L), 1, 0)
+# We can see that taking into account B365 odds, its a better rule than ranking and points alone.
+# With 210 Ceros and 679 Ones.
+table(data_F$LabelWinnerOddsB65)
+```
+Lets try a label with the the PS odds
+```{r}
+data_F$LabelWinnerOddsPS <- ifelse((data_F$PSW < data_F$PSL), 1, 0)
+# We can see that taking into account PS odds, its a better rule than ranking and points alone.
+# With 202 Ceros and 687 Ones.
+table(data_F$LabelWinnerOddsPS)
+
+```
+Lets try with MaxW and MaxL odds.
+```{r}
+data_F$LabelWinnerOddsMAX <- ifelse((data_F$MaxW < data_F$MaxL), 1, 0)
+# We can see that taking into account Max Winner odds, its a better rule than ranking and points alone.
+# With 201 Ceros and 687 Ones.
+table(data_F$LabelWinnerOddsMAX)
+```
+Lets try with AvgW and AvgL odds
+```{r}
+data_F<-data_F[!is.na(data_F$AvgW),]
+data_F<-data_F[!is.na(data_F$AvgL),]
+data_F$LabelWinnerOddsAvg <- ifelse((data_F$AvgW < data_F$AvgL), 1, 0)
+# We can see that taking into account Avg Winner odds, its a better rule than ranking and points alone.
+# With 202 Ceros and 686 Ones.
+table(data_F$LabelWinnerOddsAvg)
+```
+Another way to create our own rank and then include it in the rule would be to create a label that accounts for the
+number of times the player has won in that specific round he is playing, e.g:
+If Juan Perez is playing the 1st round, how many times has he won in the past? 3 times
+If Ronaldo Sanchez is playing the 1st round against JP, how many times has he won in the past? 5 times
+In this case, the label 1 would go to player Ronaldo because he has won the most 1st rounds in past tournaments.
+
+```{r}
+# There are several ways to calculate that value
+# One way would be to filter the first rounds in the dataset
+# go row by row
+# Start a counter from 0 at the beginning for each player
+# When the name of a player is the same as the one we are evaluating in "Winner" attribute, then:
+# add 1 to the counter and put it as a value in a new table
+# With id date, attribute Name of player, attribute named as "Won1stRounds"
+# Then for each match, we do a search for the latest date but before the start of that match for both players
+# The player that has the most wins for that round is labeled as 1.
+# HELP WITH THIS.
+```
