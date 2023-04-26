@@ -9,7 +9,7 @@ library(readr)
 library(lubridate)
 
 # Setting the dir path
-setwd("/Users/abyvelazquez/Developer/Repos/DS_TennisSet/data")
+setwd("/Users/abyvelazquez/Developer/Repos/DS_TennisSet/Tennis/data")
 data_M <- read.csv("frenchopenFinalMTransformed.csv")
 ```
 Convert the Date attribute into a Date Object and not character, also order data and limit to 2015 to now window.
@@ -100,6 +100,14 @@ data_F$LabelWinnerOddsAvg <- ifelse((data_F$AvgW < data_F$AvgL), 1, 0)
 # We can see that taking into account Avg Winner odds, its a better rule than ranking and points alone.
 # With 202 Ceros and 686 Ones.
 table(data_F$LabelWinnerOddsAvg)
+```
+Create a new csv with the simple labels we want to try
+```{r}
+
+# Convert Date to character again for promidat processing, the date as d-%m-%Y, causes error loading the data.
+data_F$Date <- as.character(data_F$Date,"%d/%m/%Y" )
+data_F_simple_labels <- data_F[,!names(data_F) %in% ("SameLabelWPWR" )]
+write.csv(data_F_simple_labels, "data_simple_labels.csv", row.names=FALSE)
 ```
 Another way to create our own rank and then include it in the rule would be to create a label that accounts for the
 number of times the player has won in that specific round he is playing, e.g:
