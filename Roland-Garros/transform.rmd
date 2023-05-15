@@ -14,7 +14,7 @@ library(dplyr)
 library(readr)
 
 # Setting the dir path
-setwd("/Users/abyvelazquez/Developer/Repos/DS_TennisSet/data")
+setwd("/Users/abyvelazquez/Developer/Repos/DS_Projects/Roland-Garros/data")
 data_M <- read.csv("frenchopenFinalM.csv")
 nrow(data_M)
 
