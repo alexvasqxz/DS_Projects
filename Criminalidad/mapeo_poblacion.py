@@ -34,4 +34,20 @@ def obtener_rango_edad(edad):
     elif edad <= 79:
         return "Adultos mayores"
     else:
-        return "Ancianos/as"
+        return
+
+def mapeo_sexo(sexo):
+    if sexo == 'Masculino':
+        return 5
+    elif sexo == 'Femenino':
+        return 10
+    else:
+        return 0
+
+def mapeo_tipo_persona(tipo):
+    if tipo == 'FISICA':
+        return 5
+    elif tipo == 'MORAL':
+        return 10
+    else:
+        return 0
